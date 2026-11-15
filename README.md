@@ -62,6 +62,13 @@ cho ứng dụng này vì Pages không chạy FastAPI hoặc WebSocket.
 7. Mở service `ai-english-tutor`, xem tab **Events** hoặc **Logs**. Chờ trạng
    thái deploy thành **Live**.
 
+**Lưu ý về thẻ thanh toán:** Render có thể yêu cầu thêm thông tin thanh toán để
+tiếp tục tạo Blueprint, kể cả khi chọn compute Free. Nếu màn hình yêu cầu thẻ,
+đó là yêu cầu xác minh/thanh toán của Render; ảnh chụp màn hình có thể hiển thị
+khoản ủy quyền tạm thời $1. Nếu không muốn cung cấp thẻ, dừng ở bước này và dùng
+cách chạy thử không cần thẻ bên dưới. Điều kiện của Render có thể thay đổi theo
+tài khoản và thời điểm.
+
 ### C. Thêm hoặc cập nhật API key trong Render
 
 Nếu chưa nhập key khi tạo Blueprint, hoặc cần thay key:
@@ -104,6 +111,48 @@ không khả dụng với API key/tài khoản của bạn, đổi giá trị bi
 
 Sau này, mỗi lần push commit mới lên nhánh `main`, Render có thể tự build và
 deploy lại service nếu bật auto-deploy.
+
+## Chạy thử online không cần thẻ: Cloudflare Quick Tunnel
+
+Cách này giữ mã nguồn trên GitHub nhưng chạy ứng dụng trên máy Windows của bạn,
+rồi tạo một URL HTTPS tạm thời để truy cập từ Internet. Máy tính và hai cửa sổ
+Terminal phải luôn mở; URL thay đổi khi tạo lại tunnel. Đây là cách demo/thử
+nghiệm, không phải hosting luôn hoạt động.
+
+1. Cài Python, rồi mở PowerShell trong thư mục dự án.
+2. Tạo môi trường và cài thư viện:
+
+   ```powershell
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   Copy-Item .env.example .env
+   ```
+
+3. Mở `.env`, điền Gemini API key vào `GEMINI_API_KEY`. Không commit file này.
+4. Trong cửa sổ PowerShell thứ nhất, chạy web app:
+
+   ```powershell
+   uvicorn server:app --host 0.0.0.0 --port 8000
+   ```
+
+5. Cài `cloudflared` theo [hướng dẫn chính thức của Cloudflare](https://developers.cloudflare.com/tunnel/downloads/).
+6. Mở cửa sổ PowerShell thứ hai và chạy:
+
+   ```powershell
+   cloudflared tunnel --url http://localhost:8000
+   ```
+
+7. Mở URL `https://....trycloudflare.com` mà lệnh in ra. Dùng URL này để thử
+   camera/microphone; chấp nhận quyền khi trình duyệt hỏi.
+8. Khi muốn dừng, nhấn `Ctrl+C` ở cửa sổ chạy `cloudflared` và cửa sổ chạy
+   `uvicorn`.
+
+**Bảo mật:** bất kỳ ai biết URL tunnel đều có thể truy cập ứng dụng và có thể
+tiêu thụ quota Gemini của bạn. Chỉ gửi URL cho người tin cậy, tắt tunnel ngay
+sau khi thử, và không đăng URL công khai. Quick Tunnel có thể bật giới hạn truy
+cập email bằng tùy chọn `--allowed-mail`; xem cú pháp hiện hành trong
+[tài liệu Cloudflare](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
 
 ## Quyền riêng tư
 
