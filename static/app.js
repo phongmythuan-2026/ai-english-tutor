@@ -18,6 +18,7 @@ let activeSources = [];
 let videoInterval = null;
 let cameraOn = true;
 let disconnecting = false;
+let socketError = null;
 
 function setStatus(message, error = false) {
     statusBadge.textContent = message;
@@ -210,6 +211,7 @@ startBtn.addEventListener("click", async () => {
         await setupMediaStreams();
         const protocol = location.protocol === "https:" ? "wss:" : "ws:";
         const socket = new WebSocket(`${protocol}//${location.host}/ws`);
+        socketError = null;
         ws = socket;
         socket.onopen = () => {
             setStatus("🟢 Đang học trực tiếp — hãy nói “Hello Teacher” nhé!");
@@ -223,9 +225,15 @@ startBtn.addEventListener("click", async () => {
             const message = JSON.parse(event.data);
             if (message.type === "audio") playPcmAudio(message.data);
             else if (message.type === "interrupted") stopAllAudio();
-            else if (message.type === "error") setStatus(message.message, true);
+            else if (message.type === "error") {
+                socketError = message.message;
+                setStatus(socketError, true);
+            }
         };
-        socket.onerror = () => setStatus("Kết nối bị lỗi. Hãy thử kết thúc và gọi lại.", true);
+        socket.onerror = () => {
+            socketError = socketError || "Kết nối bị lỗi. Hãy thử gọi lại.";
+            setStatus(socketError, true);
+        };
         socket.onclose = () => {
             if (ws === socket && !disconnecting) {
                 stopAllAudio();
@@ -235,7 +243,7 @@ startBtn.addEventListener("click", async () => {
                 endBtn.disabled = true;
                 endBtn.classList.add("hidden");
                 startBtn.classList.remove("hidden");
-                setStatus("Cuộc gọi đã kết thúc.", true);
+                setStatus(socketError || "Cuộc gọi đã kết thúc.", Boolean(socketError));
             }
         };
     } catch (error) {
