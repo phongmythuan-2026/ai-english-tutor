@@ -113,24 +113,25 @@ async def websocket_endpoint(websocket: WebSocket):
                         )
 
             async def send_to_browser():
-                async for response in session.receive():
-                    server_content = response.server_content
-                    if server_content is None:
-                        continue
-                    if server_content.interrupted:
-                        await websocket.send_json({"type": "interrupted"})
-                    if server_content.model_turn:
-                        for part in server_content.model_turn.parts:
-                            inline_data = part.inline_data
-                            if inline_data and inline_data.mime_type.startswith("audio/pcm"):
-                                await websocket.send_json(
-                                    {
-                                        "type": "audio",
-                                        "data": base64.b64encode(
-                                            inline_data.data
-                                        ).decode("ascii"),
-                                    }
-                                )
+                while True:
+                    async for response in session.receive():
+                        server_content = response.server_content
+                        if server_content is None:
+                            continue
+                        if server_content.interrupted:
+                            await websocket.send_json({"type": "interrupted"})
+                        if server_content.model_turn:
+                            for part in server_content.model_turn.parts:
+                                inline_data = part.inline_data
+                                if inline_data and inline_data.mime_type.startswith("audio/pcm"):
+                                    await websocket.send_json(
+                                        {
+                                            "type": "audio",
+                                            "data": base64.b64encode(
+                                                inline_data.data
+                                            ).decode("ascii"),
+                                        }
+                                    )
 
             tasks = [
                 asyncio.create_task(receive_from_browser()),
