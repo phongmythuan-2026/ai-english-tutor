@@ -18,8 +18,51 @@
     <style>
         html, body { min-height: 100%; }
         #avatar-container canvas { display: block; }
+        .teacher-figure {
+            transform-origin: center bottom;
+            animation: teacher-float 3s ease-in-out infinite;
+        }
+        .teacher-eyes {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: teacher-blink 5s infinite;
+        }
+        .teacher-mouth {
+            transform-box: fill-box;
+            transform-origin: center;
+            transition: transform 80ms ease;
+        }
+        #avatar-fallback.is-speaking .teacher-mouth {
+            animation: teacher-talk 150ms ease-in-out infinite alternate;
+        }
+        #avatar-fallback.is-speaking .teacher-figure {
+            animation: teacher-speak 500ms ease-in-out infinite alternate;
+        }
+        #avatar-fallback.is-listening .teacher-figure {
+            animation: teacher-listen 900ms ease-in-out infinite alternate;
+        }
+        @keyframes teacher-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        @keyframes teacher-blink {
+            0%, 46%, 50%, 100% { transform: scaleY(1); }
+            48% { transform: scaleY(0.1); }
+        }
+        @keyframes teacher-talk {
+            from { transform: scaleY(0.5); }
+            to { transform: scaleY(2.2); }
+        }
+        @keyframes teacher-speak {
+            from { transform: translateY(0) rotate(-1deg); }
+            to { transform: translateY(-4px) rotate(1deg); }
+        }
+        @keyframes teacher-listen {
+            from { transform: translateY(0) rotate(0); }
+            to { transform: translateY(-3px) rotate(1deg); }
+        }
         @media (max-width: 640px) {
-            #kid-camera { width: 112px; height: 84px; right: 12px; bottom: 116px; }
+            #kid-camera { width: 112px; height: 84px; right: 12px; bottom: 12px; }
         }
     </style>
 </head>
@@ -30,23 +73,51 @@
             <span class="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-indigo-700 shadow-sm">AI English Class</span>
         </header>
 
-        <section class="relative flex h-[min(70vh,680px)] w-full max-w-5xl flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/70 bg-gradient-to-b from-sky-200 via-sky-100 to-indigo-200 shadow-xl shadow-indigo-900/10">
+        <section class="relative flex h-[min(56vh,560px)] min-h-[280px] w-full max-w-5xl flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-white/70 bg-gradient-to-b from-sky-200 via-sky-100 to-indigo-200 shadow-xl shadow-indigo-900/10">
             <div class="pointer-events-none absolute left-10 top-12 text-5xl opacity-60" aria-hidden="true">☁️</div>
             <div class="pointer-events-none absolute right-12 top-24 text-4xl opacity-70" aria-hidden="true">✨</div>
             <div id="avatar-container" class="absolute inset-0"></div>
-            <div id="avatar-fallback" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-                <div class="text-8xl drop-shadow-md" aria-hidden="true">👩‍🏫</div>
+            <div id="avatar-fallback" class="absolute inset-0 flex flex-col items-center justify-center gap-1 text-center">
+                <svg class="teacher-figure h-52 w-44 drop-shadow-md sm:h-60 sm:w-52" viewBox="0 0 180 230" role="img" aria-label="Animated illustration of Teacher Emma">
+                    <path d="M37 213c3-42 19-64 53-64s50 22 53 64" fill="#6d55a5"/>
+                    <path d="M68 151l22 24 22-24" fill="#fff5e8"/>
+                    <path d="M47 87c-8-35 7-64 43-64s52 28 44 66l-7 54H53z" fill="#f3a528"/>
+                    <ellipse cx="90" cy="91" rx="37" ry="43" fill="#ffd2b2"/>
+                    <path d="M53 82c2-35 15-52 39-52 25 0 39 18 39 49-9-5-16-15-20-26-12 13-31 20-58 20z" fill="#f3a528"/>
+                    <path d="M56 77c-12 7-15 24-11 38l9 8zM124 76c12 7 15 24 11 38l-9 9z" fill="#f3a528"/>
+                    <g class="teacher-eyes" fill="#45334b">
+                        <ellipse cx="76" cy="91" rx="3" ry="4"/>
+                        <ellipse cx="104" cy="91" rx="3" ry="4"/>
+                    </g>
+                    <path d="M66 83h19m10 0h19m-29 1 4 2" fill="none" stroke="#58466a" stroke-width="3" stroke-linecap="round"/>
+                    <path class="teacher-mouth" d="M81 112q9 7 18 0" fill="none" stroke="#a84456" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M69 127q21 13 42 0" fill="none" stroke="#e9a1a0" stroke-width="2"/>
+                    <path d="M38 211h104" stroke="#514079" stroke-width="5" stroke-linecap="round"/>
+                    <rect x="45" y="181" width="90" height="39" rx="5" fill="#e84f82"/>
+                    <path d="M45 181h90v9H45z" fill="#ffd45c"/>
+                    <path d="M32 188q-8 7 0 17l15 5 5-11-11-11zM148 188q8 7 0 17l-15 5-5-11 11-11z" fill="#ffd2b2"/>
+                    <rect x="73" y="178" width="34" height="9" rx="3" fill="#fff5e8"/>
+                </svg>
                 <p class="font-bold text-indigo-900">Teacher Emma</p>
             </div>
             <div class="pointer-events-none absolute bottom-5 left-5 rounded-2xl bg-white/75 px-4 py-2 text-sm font-medium text-indigo-900 shadow-sm">
-                <span aria-hidden="true">💬</span> Cùng Emma luyện nói tiếng Anh nhé!
+                <span aria-hidden="true">💬</span> Speak English with Emma!
+            </div>
+            <div id="kid-camera" class="absolute bottom-5 right-5 z-10 h-28 w-36 overflow-hidden rounded-2xl border-4 border-white bg-slate-900 shadow-xl">
+                <video id="kid-webcam" autoplay playsinline muted class="h-full w-full object-cover [transform:scaleX(-1)]"></video>
+                <span class="absolute bottom-1 left-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white">You</span>
             </div>
         </section>
 
-        <div id="kid-camera" class="absolute bottom-32 right-8 z-10 h-36 w-48 overflow-hidden rounded-2xl border-4 border-white bg-slate-900 shadow-xl">
-            <video id="kid-webcam" autoplay playsinline muted class="h-full w-full object-cover [transform:scaleX(-1)]"></video>
-            <span class="absolute bottom-1 left-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white">Con</span>
-        </div>
+        <section class="mt-3 w-full max-w-5xl rounded-2xl border border-white/80 bg-white/85 px-4 py-3 shadow-sm backdrop-blur" aria-label="English conversation captions">
+            <div class="mb-2 flex items-center justify-between gap-2">
+                <h2 class="text-sm font-bold text-indigo-900">💬 English conversation</h2>
+                <span class="text-xs text-slate-500">Words appear here to help you remember</span>
+            </div>
+            <div id="transcript-list" class="max-h-20 space-y-1 overflow-y-auto text-sm leading-relaxed" role="log" aria-live="polite" aria-relevant="additions">
+                <p id="transcript-empty" class="text-slate-500">Your conversation will appear here.</p>
+            </div>
+        </section>
 
         <div class="absolute bottom-4 left-1/2 z-20 flex w-[calc(100%-24px)] max-w-2xl -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl bg-white/90 p-3 shadow-xl backdrop-blur sm:bottom-6 sm:flex-nowrap sm:gap-3 sm:rounded-full sm:px-5">
             <p id="status-badge" role="status" aria-live="polite" class="w-full text-center text-xs font-semibold text-amber-700 sm:w-auto sm:min-w-36 sm:text-sm">Đang tải nhân vật 3D…</p>

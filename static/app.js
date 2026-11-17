@@ -5,6 +5,8 @@ const startBtn = document.getElementById("start-btn");
 const endBtn = document.getElementById("end-btn");
 const camBtn = document.getElementById("cam-btn");
 const webcamVideo = document.getElementById("kid-webcam");
+const transcriptList = document.getElementById("transcript-list");
+const transcriptEmpty = document.getElementById("transcript-empty");
 
 const INPUT_SAMPLE_RATE = 16000;
 const OUTPUT_SAMPLE_RATE = 24000;
@@ -19,12 +21,32 @@ let videoInterval = null;
 let cameraOn = true;
 let disconnecting = false;
 let socketError = null;
+let listeningTimer = null;
 
 function setStatus(message, error = false) {
     statusBadge.textContent = message;
     statusBadge.classList.toggle("text-rose-700", error);
     statusBadge.classList.toggle("text-amber-700", !error);
     statusBadge.classList.toggle("text-emerald-700", !error && message.startsWith("🟢"));
+}
+
+function addTranscript(speaker, text) {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+    if (transcriptEmpty && transcriptEmpty.isConnected) transcriptEmpty.remove();
+
+    const row = document.createElement("p");
+    row.className = "text-slate-700";
+    const label = document.createElement("strong");
+    label.className = speaker === "teacher" ? "text-indigo-700" : "text-emerald-700";
+    label.textContent = speaker === "teacher" ? "Emma: " : "You: ";
+    row.append(label, document.createTextNode(trimmedText));
+    transcriptList.appendChild(row);
+
+    while (transcriptList.children.length > 10) {
+        transcriptList.firstElementChild.remove();
+    }
+    transcriptList.scrollTop = transcriptList.scrollHeight;
 }
 
 async function initAvatar() {
@@ -73,9 +95,19 @@ function sendAudio(event) {
         inputContext.sampleRate
     );
     const pcm = new Int16Array(samples.length);
+    let sumSquares = 0;
     for (let i = 0; i < samples.length; i++) {
         const sample = Math.max(-1, Math.min(1, samples[i]));
         pcm[i] = sample < 0 ? sample * 32768 : sample * 32767;
+        sumSquares += sample * sample;
+    }
+    if (Math.sqrt(sumSquares / Math.max(1, samples.length)) > 0.018) {
+        avatarFallback.classList.add("is-listening");
+        clearTimeout(listeningTimer);
+        listeningTimer = window.setTimeout(
+            () => avatarFallback.classList.remove("is-listening"),
+            700
+        );
     }
     const bytes = new Uint8Array(pcm.buffer);
     let binary = "";
@@ -139,6 +171,8 @@ function playPcmAudio(base64Data) {
     if (head && float32.length) {
         head.setFixedValue("jawOpen", Math.min(1, Math.sqrt(sumSquares / float32.length) * 6.5));
     }
+    avatarFallback.classList.remove("is-listening");
+    avatarFallback.classList.add("is-speaking");
     const buffer = outputContext.createBuffer(1, float32.length, OUTPUT_SAMPLE_RATE);
     buffer.getChannelData(0).set(float32);
     const source = outputContext.createBufferSource();
@@ -151,7 +185,10 @@ function playPcmAudio(base64Data) {
     activeSources.push(source);
     source.onended = () => {
         activeSources = activeSources.filter(item => item !== source);
-        if (activeSources.length === 0 && head) head.setFixedValue("jawOpen", 0);
+        if (activeSources.length === 0) {
+            if (head) head.setFixedValue("jawOpen", 0);
+            avatarFallback.classList.remove("is-speaking");
+        }
     };
 }
 
@@ -166,6 +203,8 @@ function stopAllAudio() {
     activeSources = [];
     nextPlayTime = 0;
     if (head) head.setFixedValue("jawOpen", 0);
+    avatarFallback.classList.remove("is-speaking", "is-listening");
+    clearTimeout(listeningTimer);
 }
 
 function releaseMedia() {
@@ -225,6 +264,7 @@ startBtn.addEventListener("click", async () => {
             const message = JSON.parse(event.data);
             if (message.type === "audio") playPcmAudio(message.data);
             else if (message.type === "interrupted") stopAllAudio();
+            else if (message.type === "transcript") addTranscript(message.speaker, message.text);
             else if (message.type === "error") {
                 socketError = message.message;
                 setStatus(socketError, true);

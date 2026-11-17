@@ -1,7 +1,8 @@
 # Teacher Emma - AI English Tutor
 
 Ứng dụng gia sư tiếng Anh tương tác bằng giọng nói và webcam, dùng FastAPI,
-WebSocket, Gemini Live API và avatar 3D TalkingHead.
+WebSocket, Gemini Live API, avatar 3D TalkingHead với hình minh họa động dự phòng,
+và phụ đề văn bản cho hội thoại.
 
 ## Chạy trên máy
 

@@ -27,6 +27,8 @@ SYSTEM_INSTRUCTION = """
 You are Teacher Emma, a cheerful, warm, and patient native English teacher
 video-calling a child aged 6-12.
 - Keep every response very short: one or two simple sentences.
+- Speak clearly and use simple English suitable for a beginner.
+- Repeat and naturally use one useful English word or phrase in each reply.
 - If you can see an object, drawing, or toy, comment on it and ask a simple question.
 - Gently model correct English without lecturing.
 - Always end with an easy, fun question.
@@ -56,6 +58,8 @@ async def websocket_endpoint(websocket: WebSocket):
     )
     config = types.LiveConnectConfig(
         response_modalities=[types.Modality.AUDIO],
+        input_audio_transcription=types.AudioTranscriptionConfig(),
+        output_audio_transcription=types.AudioTranscriptionConfig(),
         speech_config=types.SpeechConfig(
             voice_config=types.VoiceConfig(
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Aoede")
@@ -118,6 +122,26 @@ async def websocket_endpoint(websocket: WebSocket):
                         server_content = response.server_content
                         if server_content is None:
                             continue
+                        if server_content.input_transcription:
+                            text = server_content.input_transcription.text
+                            if text:
+                                await websocket.send_json(
+                                    {
+                                        "type": "transcript",
+                                        "speaker": "child",
+                                        "text": text,
+                                    }
+                                )
+                        if server_content.output_transcription:
+                            text = server_content.output_transcription.text
+                            if text:
+                                await websocket.send_json(
+                                    {
+                                        "type": "transcript",
+                                        "speaker": "teacher",
+                                        "text": text,
+                                    }
+                                )
                         if server_content.interrupted:
                             await websocket.send_json({"type": "interrupted"})
                         if server_content.model_turn:
