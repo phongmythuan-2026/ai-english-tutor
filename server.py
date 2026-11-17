@@ -50,7 +50,10 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close(code=1011)
         return
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(
+        api_key=api_key,
+        http_options={"api_version": "v1beta"},
+    )
     config = types.LiveConnectConfig(
         response_modalities=[types.Modality.AUDIO],
         speech_config=types.SpeechConfig(
